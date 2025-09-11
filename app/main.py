@@ -33,7 +33,7 @@ async def speak_to_text(file:UploadFile  ):
     return await text_speech_controller.speak_to_text(link)
 
 @app.post("/voice_changer")
-async def voice_changer(audio:UploadFile, ref_url:str):
+async def voice_changer(audio:UploadFile, ref_url:str = Form(...)):
     link = await text_speech_controller.upload_reference(audio)
     print("model uploaded")
     transcription=  await text_speech_controller.speak_to_text(link)
