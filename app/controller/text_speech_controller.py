@@ -1,3 +1,4 @@
+from fastapi import HTTPException
 import replicate
 import httpx
 from fastapi import UploadFile
@@ -51,3 +52,45 @@ async def upload_reference(file: UploadFile) -> str:
     except Exception as e:
         # Catch-all pour toute autre exception
         return {"error from replicate API": "Unexpected error", "details": str(e)}
+
+
+import replicate
+
+
+async def speak_to_text(audio_file_path: str) -> str:
+    """
+    Transcrit un fichier audio en texte via Whisper sur Replicate.
+
+    :param audio_file_path: lien vers fichier audio (wav, mp3, etc.)
+    :return: texte transcrit
+    """
+    try:
+        # Chargement du modèle Whisper (base sur Replicate)
+        model = 'openai/whisper:8099696689d249cf8b122d833c36ac3f75505c666a395ca40ef26f68e7d3d16e'
+
+        # Exécution de la prédiction
+        output = replicate.run(
+            model,
+            input={
+                "audio": audio_file_path,  # fichier hébergé sur le web
+                "language": "fr"  # facultatif : tu peux forcer la langue
+            }
+        )
+
+        # L’output est une string avec la transcription
+        return output["transcription"]
+
+    except httpx.HTTPStatusError as e:
+        print(e)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erreur HTTP pendant la transcription: {str(e)}"
+        )
+
+    except Exception as e:  # attrape TypeError, ValueError, etc.
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erreur interne pendant la transcription: {str(e)}"
+        )
+
+
