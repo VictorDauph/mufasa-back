@@ -1,3 +1,5 @@
+import json
+
 from fastapi import HTTPException
 import replicate
 import httpx
@@ -93,4 +95,33 @@ async def speak_to_text(audio_file_path: str) -> str:
             detail=f"Erreur interne pendant la transcription: {str(e)}"
         )
 
+async def ask_llama(prompt: str,transcription:str):
+    try:
+        context_arr = json.loads(prompt)
+        context_arr.append({"role":"user","content":transcription})
+        prompt = json.dumps(context_arr)
 
+        # Appel au modèle Replicate
+        output = replicate.run(
+            "meta/meta-llama-3-70b-instruct",
+            input={
+                "prompt": prompt,
+                "max_tokens": 300,       # facultatif
+                "temperature": 0.3       # un peu de créativité mais réponses stables
+            }
+        )
+
+        # output peut être un générateur -> on concatène
+        if isinstance(output, (list, tuple)):
+            answer = "".join(output)
+        else:
+            answer = str(output)
+
+        context_arr.append({"role":"system","content":answer})
+
+        return {"context":context_arr, "answer":answer}
+
+
+
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Erreur Replicate: {e}")
