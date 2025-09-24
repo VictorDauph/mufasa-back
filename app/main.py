@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import FastAPI, UploadFile, Form
 from fastapi.responses import StreamingResponse
 import requests
@@ -19,6 +21,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/test")
+def test():
+    print("test from frontend")
+    return {"message": "Back online"}
+
 @app.post("/speak")
 async def speak(req: SpeakInDto):
     return {"audio_url":text_speech_controller.text_to_speech(req.text,req.ref_url)}
@@ -39,3 +46,19 @@ async def voice_changer(audio:UploadFile, ref_url:str = Form(...)):
     transcription=  await text_speech_controller.speak_to_text(link)
     print(transcription)
     return {"audio_url":text_speech_controller.text_to_speech(transcription,ref_url)}
+
+@app.post("/ask")
+async def ask(audio:UploadFile, ref_url:str =Form(...), context:str = Form(...)):
+    print(ref_url)
+    print(context)
+    #response_dict = await text_speech_controller.ask_llama(context)
+
+
+    link = await text_speech_controller.upload_reference(audio)
+    print("model uploaded")
+    transcription=  await text_speech_controller.speak_to_text(link)
+    print(transcription)
+
+    response_dict = await text_speech_controller.ask_llama(context,transcription)
+
+    return {"audio_url":text_speech_controller.text_to_speech(response_dict["answer"],ref_url),"context":response_dict["context"]}
