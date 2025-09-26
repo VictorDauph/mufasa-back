@@ -1,3 +1,4 @@
+import json
 import logging
 
 from fastapi import FastAPI, UploadFile, Form
@@ -51,8 +52,6 @@ async def voice_changer(audio:UploadFile, ref_url:str = Form(...)):
 async def ask(audio:UploadFile, ref_url:str =Form(...), context:str = Form(...)):
     print(ref_url)
     print(context)
-    #response_dict = await text_speech_controller.ask_llama(context)
-
 
     link = await text_speech_controller.upload_reference(audio)
     print("model uploaded")
@@ -60,5 +59,5 @@ async def ask(audio:UploadFile, ref_url:str =Form(...), context:str = Form(...))
     print(transcription)
 
     response_dict = await text_speech_controller.ask_llama(context,transcription)
-
+    print(json.dumps(response_dict,indent=4))
     return {"audio_url":text_speech_controller.text_to_speech(response_dict["answer"],ref_url),"context":response_dict["context"]}
